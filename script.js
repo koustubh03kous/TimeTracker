@@ -34,8 +34,14 @@ function getProjectColor(proj) {
 
 // --- Render Functions ---
 async function renderGrid() {
+    console.log("renderGrid() started. Current timeBlocks:", timeBlocks);
     const body = document.getElementById('timeGridBody');
     body.innerHTML = '';
+
+    if (Object.keys(timeBlocks).length === 0) {
+        body.innerHTML = '<h3 style="text-align: center; color: #9ca3af; padding: 20px;">No time entries found for this date. Start planning!</h3>';
+        return;
+    }
 
     timeSlots.forEach(time => {
         const block = timeBlocks[time] || { p: '', a: '', pr: '', e: 3, d: '' };
@@ -110,6 +116,7 @@ async function renderTemplates() {
     const { data: fetchedTemplates, error: templatesError } = await supabase.from('templates').select('*');
     if (templatesError) {
         console.error('Error re-fetching templates for rendering:', templatesError);
+        showToast(`❌ Error re-fetching templates: ${templatesError.message}`);
     } else if (fetchedTemplates) {
         templates = fetchedTemplates.map(t => ({ name: t.name, data: t.data, created: t.created_at }));
     }
@@ -146,10 +153,15 @@ async function renderTemplates() {
 
 // --- Core Data Logic (Supabase Integrated) ---
 async function loadData() {
+    console.log("loadData() started for date:", selectedDate);
+    let hasError = false;
+
     // Load projects from Supabase
     const { data: fetchedProjects, error: projectsError } = await supabase.from('projects').select('name');
     if (projectsError) {
         console.error('Error fetching projects:', projectsError);
+        showToast(`❌ Error fetching projects: ${projectsError.message}`);
+        hasError = true;
     } else if (fetchedProjects) {
         projects = fetchedProjects.map(p => p.name);
     }
@@ -158,6 +170,8 @@ async function loadData() {
     const { data: fetchedTemplates, error: templatesError } = await supabase.from('templates').select('*');
     if (templatesError) {
         console.error('Error fetching templates:', templatesError);
+        showToast(`❌ Error fetching templates: ${templatesError.message}`);
+        hasError = true;
     } else if (fetchedTemplates) {
         templates = fetchedTemplates.map(t => ({ name: t.name, data: t.data, created: t.created_at }));
     }
@@ -170,6 +184,8 @@ async function loadData() {
         .single();
     if (reflectionError && reflectionError.code !== 'PGRST116') { // PGRST116 is 'No rows found'
         console.error('Error fetching reflection:', reflectionError);
+        showToast(`❌ Error fetching reflection: ${reflectionError.message}`);
+        hasError = true;
     } else if (fetchedReflection) {
         dailyReflection = fetchedReflection.content;
         document.getElementById('reflectionText').value = dailyReflection;
@@ -186,6 +202,8 @@ async function loadData() {
 
     if (timeBlocksError) {
         console.error('Error fetching time blocks:', timeBlocksError);
+        showToast(`❌ Error fetching time blocks: ${timeBlocksError.message}`);
+        hasError = true;
     } else if (fetchedTimeBlocks && fetchedTimeBlocks.length > 0) {
         timeBlocks = {};
         fetchedTimeBlocks.forEach(entry => {
@@ -203,10 +221,18 @@ async function loadData() {
             timeBlocks[s] = { p: '', a: '', pr: '', e: 3, d: '' };
         });
     }
+
+    console.log("timeBlocks after fetch:", timeBlocks);
     renderGrid();
     updateSummary();
     renderTemplates();
     updateProjectsDatalist(); // Ensure datalist is updated after projects are loaded
+
+    if (hasError) {
+        document.getElementById('timeGridBody').innerHTML = '<h3 style="text-align: center; color: #ef4444; padding: 20px;">Failed to load data. Check console for errors.</h3>';
+    } else if (Object.keys(timeBlocks).length === 0) {
+        document.getElementById('timeGridBody').innerHTML = '<h3 style="text-align: center; color: #9ca3af; padding: 20px;">No time entries found for this date. Start planning!</h3>';
+    }
 }
 
 async function saveData() {
@@ -439,6 +465,7 @@ async function loadWeeklySummary() {
 
         if (error) {
             console.error(`Error fetching data for ${dk}:`, error);
+            showToast(`❌ Error fetching weekly data for ${dk}: ${error.message}`);
             continue;
         }
 
@@ -497,16 +524,27 @@ async function loadWeeklySummary() {
 // --- Import/Export Functions (Supabase Integrated) ---
 async function exportJSON() {
     const allData = { projects: [], templates: [], entries: {} };
+    let hasError = false;
 
     // Fetch all projects
     const { data: fetchedProjects, error: projectsError } = await supabase.from('projects').select('name');
-    if (projectsError) console.error('Error fetching projects for export:', projectsError);
-    else allData.projects = fetchedProjects.map(p => p.name);
+    if (projectsError) {
+        console.error('Error fetching projects for export:', projectsError);
+        showToast(`❌ Error fetching projects for export: ${projectsError.message}`);
+        hasError = true;
+    } else {
+        allData.projects = fetchedProjects.map(p => p.name);
+    }
 
     // Fetch all templates
     const { data: fetchedTemplates, error: templatesError } = await supabase.from('templates').select('*');
-    if (templatesError) console.error('Error fetching templates for export:', templatesError);
-    else allData.templates = fetchedTemplates.map(t => ({ name: t.name, data: t.data, created: t.created_at }));
+    if (templatesError) {
+        console.error('Error fetching templates for export:', templatesError);
+        showToast(`❌ Error fetching templates for export: ${templatesError.message}`);
+        hasError = true;
+    } else {
+        allData.templates = fetchedTemplates.map(t => ({ name: t.name, data: t.data, created: t.created_at }));
+    }
 
     // Fetch all time entries and reflections for the last 90 days
     const today = new Date();
@@ -527,8 +565,16 @@ async function exportJSON() {
         .select('date, content')
         .in('date', dateRange);
 
-    if (allTimeBlocksError) console.error('Error fetching all time blocks for export:', allTimeBlocksError);
-    if (allReflectionsError) console.error('Error fetching all reflections for export:', allReflectionsError);
+    if (allTimeBlocksError) {
+        console.error('Error fetching all time blocks for export:', allTimeBlocksError);
+        showToast(`❌ Error fetching time blocks for export: ${allTimeBlocksError.message}`);
+        hasError = true;
+    }
+    if (allReflectionsError && allReflectionsError.code !== 'PGRST116') {
+        console.error('Error fetching all reflections for export:', allReflectionsError);
+        showToast(`❌ Error fetching reflections for export: ${allReflectionsError.message}`);
+        hasError = true;
+    }
 
     if (allTimeBlocks) {
         allTimeBlocks.forEach(entry => {
@@ -553,6 +599,11 @@ async function exportJSON() {
         });
     }
 
+    if (hasError) {
+        showToast('❌ Export failed due to data fetching errors.');
+        return;
+    }
+
     const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -564,6 +615,7 @@ async function exportJSON() {
 
 async function exportCSV() {
     let csv = 'Date,Time,Planned,Actual,Project,Energy,Distraction\n';
+    let hasError = false;
 
     const today = new Date();
     const dateRange = [];
@@ -580,11 +632,11 @@ async function exportCSV() {
 
     if (allTimeBlocksError) {
         console.error('Error fetching all time blocks for CSV export:', allTimeBlocksError);
-        showToast('❌ CSV export failed due to data fetching error');
-        return;
+        showToast(`❌ CSV export failed due to data fetching error: ${allTimeBlocksError.message}`);
+        hasError = true;
     }
 
-    if (allTimeBlocks) {
+    if (!hasError && allTimeBlocks) {
         // Group blocks by date and then by time_slot
         const groupedBlocks = {};
         allTimeBlocks.forEach(entry => {
@@ -605,6 +657,11 @@ async function exportCSV() {
                 }
             });
         });
+    }
+
+    if (hasError) {
+        showToast('❌ CSV export failed due to data fetching errors.');
+        return;
     }
 
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -644,13 +701,19 @@ async function importJSON(content) {
     try {
         const data = JSON.parse(content);
         let count = 0;
+        let hasError = false;
 
         // Import projects
         if (data.projects && data.projects.length > 0) {
             const projectsToUpsert = data.projects.map(name => ({ name }));
             const { error } = await supabase.from('projects').upsert(projectsToUpsert, { onConflict: 'name' });
-            if (error) console.error('Error importing projects:', error);
-            else projects = [...new Set([...projects, ...data.projects])]; // Update local projects array
+            if (error) {
+                console.error('Error importing projects:', error);
+                showToast(`❌ Error importing projects: ${error.message}`);
+                hasError = true;
+            } else {
+                projects = [...new Set([...projects, ...data.projects])]; // Update local projects array
+            }
         }
 
         // Import templates
@@ -661,8 +724,11 @@ async function importJSON(content) {
                 created_at: t.created // Assuming 'created' from export is 'created_at' for Supabase
             }));
             const { error } = await supabase.from('templates').upsert(templatesToUpsert, { onConflict: 'name' });
-            if (error) console.error('Error importing templates:', error);
-            else { // Re-fetch templates to ensure UI consistency
+            if (error) {
+                console.error('Error importing templates:', error);
+                showToast(`❌ Error importing templates: ${error.message}`);
+                hasError = true;
+            } else { // Re-fetch templates to ensure UI consistency
                 const { data: fetchedTemplates, error: fetchError } = await supabase.from('templates').select('*');
                 if (fetchError) console.error('Error re-fetching templates after import:', fetchError);
                 else templates = fetchedTemplates.map(t => ({ name: t.name, data: t.data, created: t.created_at }));
@@ -677,7 +743,11 @@ async function importJSON(content) {
                     const { error: reflectionError } = await supabase
                         .from('reflections')
                         .upsert({ date, content: entry.reflection }, { onConflict: 'date' });
-                    if (reflectionError) console.error(`Error importing reflection for ${date}:`, reflectionError);
+                    if (reflectionError) {
+                        console.error(`Error importing reflection for ${date}:`, reflectionError);
+                        showToast(`❌ Error importing reflection for ${date}: ${reflectionError.message}`);
+                        hasError = true;
+                    }
                 }
 
                 // Upsert time blocks
@@ -692,14 +762,22 @@ async function importJSON(content) {
                         distraction_reason: block.d
                     }));
                     const { error: timeBlocksError } = await supabase.from('time_entries').upsert(timeEntriesToUpsert, { onConflict: 'date,time_slot' });
-                    if (timeBlocksError) console.error(`Error importing time blocks for ${date}:`, timeBlocksError);
+                    if (timeBlocksError) {
+                        console.error(`Error importing time blocks for ${date}:`, timeBlocksError);
+                        showToast(`❌ Error importing time blocks for ${date}: ${timeBlocksError.message}`);
+                        hasError = true;
+                    }
                 }
                 count++;
             }
         }
 
-        showToast(`✓ Imported ${count} days!`);
-        loadData(); // Reload data to ensure UI reflects newly imported data
+        if (hasError) {
+            showToast('❌ Import failed due to one or more errors.');
+        } else {
+            showToast(`✓ Imported ${count} days!`);
+            loadData(); // Reload data to ensure UI reflects newly imported data
+        }
     } catch (error) {
         console.error(error);
         showToast('❌ JSON parse error');
@@ -710,6 +788,7 @@ async function importCSV(content) {
     try {
         const lines = content.split('\n'); // Changed to split by newline for CSV
         let count = 0;
+        let hasError = false;
         const timeEntriesToUpsert = [];
         const projectsToUpsert = new Set();
         const reflectionsToUpsert = {}; // CSV doesn't typically have reflections per day, but handling if it did
@@ -751,19 +830,32 @@ async function importCSV(content) {
         // Upsert time entries
         if (timeEntriesToUpsert.length > 0) {
             const { error } = await supabase.from('time_entries').upsert(timeEntriesToUpsert, { onConflict: 'date,time_slot' });
-            if (error) console.error('Error importing time entries from CSV:', error);
+            if (error) {
+                console.error('Error importing time entries from CSV:', error);
+                showToast(`❌ Error importing time entries from CSV: ${error.message}`);
+                hasError = true;
+            }
         }
 
         // Upsert new projects
         if (projectsToUpsert.size > 0) {
             const newProjectsArray = Array.from(projectsToUpsert).map(name => ({ name }));
             const { error } = await supabase.from('projects').upsert(newProjectsArray, { onConflict: 'name' });
-            if (error) console.error('Error importing projects from CSV:', error);
-            else projects = [...new Set([...projects, ...Array.from(projectsToUpsert)])]; // Update local projects array
+            if (error) {
+                console.error('Error importing projects from CSV:', error);
+                showToast(`❌ Error importing projects from CSV: ${error.message}`);
+                hasError = true;
+            } else {
+                projects = [...new Set([...projects, ...Array.from(projectsToUpsert)])]; // Update local projects array
+            }
         }
 
-        showToast(`✓ Imported ${count} time entries from CSV!`);
-        loadData(); // Reload data to ensure UI reflects newly imported data
+        if (hasError) {
+            showToast('❌ CSV import failed due to one or more errors.');
+        } else {
+            showToast(`✓ Imported ${count} time entries from CSV!`);
+            loadData(); // Reload data to ensure UI reflects newly imported data
+        }
     } catch (error) {
         console.error(error);
         showToast('❌ CSV parse error');
