@@ -223,16 +223,16 @@ async function loadData() {
     }
 
     console.log("timeBlocks after fetch:", timeBlocks);
-    renderGrid();
+    renderGrid(); // Call renderGrid regardless of error, let it show fallback message
     updateSummary();
     renderTemplates();
     updateProjectsDatalist(); // Ensure datalist is updated after projects are loaded
 
     if (hasError) {
-        document.getElementById('timeGridBody').innerHTML = '<h3 style="text-align: center; color: #ef4444; padding: 20px;">Failed to load data. Check console for errors.</h3>';
-    } else if (Object.keys(timeBlocks).length === 0) {
-        document.getElementById('timeGridBody').innerHTML = '<h3 style="text-align: center; color: #9ca3af; padding: 20px;">No time entries found for this date. Start planning!</h3>';
+        // If there was an error, renderGrid might have cleared body.innerHTML, so we set it again.
+        document.getElementById('timeGridBody').innerHTML = '<h3 style="text-align: center; color: #ef4444; padding: 20px;">Failed to load data. Check console and toasts for errors.</h3>';
     }
+    // Fallback for empty time blocks is now handled within renderGrid()
 }
 
 async function saveData() {
@@ -242,7 +242,10 @@ async function saveData() {
     const { error: reflectionUpsertError } = await supabase
         .from('reflections')
         .upsert({ date: selectedDate, content: dailyReflection }, { onConflict: 'date' });
-    if (reflectionUpsertError) console.error('Error saving reflection:', reflectionUpsertError);
+    if (reflectionUpsertError) {
+        console.error('Error saving reflection:', reflectionUpsertError);
+        showToast(`❌ Error saving reflection: ${reflectionUpsertError.message}`);
+    }
 
     // Save time blocks to Supabase
     const timeEntriesToUpsert = Object.entries(timeBlocks).map(([time_slot, data]) => ({
@@ -255,7 +258,10 @@ async function saveData() {
         distraction_reason: data.d
     }));
     const { error: timeBlocksUpsertError } = await supabase.from('time_entries').upsert(timeEntriesToUpsert, { onConflict: 'date,time_slot' });
-    if (timeBlocksUpsertError) console.error('Error saving time blocks:', timeBlocksUpsertError);
+    if (timeBlocksUpsertError) {
+        console.error('Error saving time blocks:', timeBlocksUpsertError);
+        showToast(`❌ Error saving time blocks: ${timeBlocksUpsertError.message}`);
+    }
 
     // Save projects to Supabase (only unique new ones)
     const existingProjects = (await supabase.from('projects').select('name')).data.map(p => p.name);
@@ -263,10 +269,11 @@ async function saveData() {
     if (newProjects.length > 0) {
         const projectsToUpsert = newProjects.map(name => ({ name }));
         const { error: projectsUpsertError } = await supabase.from('projects').upsert(projectsToUpsert, { onConflict: 'name' });
-        if (projectsUpsertError) console.error('Error saving projects:', projectsUpsertError);
+        if (projectsUpsertError) {
+            console.error('Error saving projects:', projectsUpsertError);
+            showToast(`❌ Error saving projects: ${projectsUpsertError.message}`);
+        }
     }
-
-    // Templates saving is handled by saveTemplate() now
 
     showToast('✓ Data saved successfully!');
 }
@@ -277,7 +284,7 @@ async function saveTemplate() {
         const { error } = await supabase.from('templates').upsert({ name, data: JSON.parse(JSON.stringify(timeBlocks)), created_at: new Date().toISOString() }, { onConflict: 'name' });
         if (error) {
             console.error('Error saving template:', error);
-            showToast('❌ Template save failed!');
+            showToast(`❌ Template save failed: ${error.message}`);
         } else {
             await loadData(); // Re-fetch all data including templates to update the UI correctly
             showToast('✓ Template saved!');
@@ -299,7 +306,7 @@ async function deleteTemplate(index) {
 
         if (error) {
             console.error('Error deleting template:', error);
-            showToast('❌ Template deletion failed!');
+            showToast(`❌ Template deletion failed: ${error.message}`);
         } else {
             await loadData(); // Re-fetch all data including templates to update the UI correctly
             showToast('✓ Template deleted!');
@@ -339,7 +346,7 @@ async function copyYesterday() {
 
     if (error) {
         console.error('Error fetching yesterday\'s data:', error);
-        showToast('❌ Error fetching yesterday\'s data');
+        showToast(`❌ Error fetching yesterday\'s data: ${error.message}`);
         return;
     }
 
@@ -728,7 +735,7 @@ async function importJSON(content) {
                 console.error('Error importing templates:', error);
                 showToast(`❌ Error importing templates: ${error.message}`);
                 hasError = true;
-            } else { // Re-fetch templates to ensure UI consistency
+            } else {
                 const { data: fetchedTemplates, error: fetchError } = await supabase.from('templates').select('*');
                 if (fetchError) console.error('Error re-fetching templates after import:', fetchError);
                 else templates = fetchedTemplates.map(t => ({ name: t.name, data: t.data, created: t.created_at }));
@@ -799,7 +806,7 @@ async function importCSV(content) {
 
             // Regex to handle commas within double quotes
             const matches = line.match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g);
-            if (!matches || matches.length < 7) { // Expect 7 fields
+            if (!matches || matches.length < 7) {
                 console.warn(`Skipping malformed CSV line: ${line}`);
                 continue;
             }
@@ -845,8 +852,6 @@ async function importCSV(content) {
                 console.error('Error importing projects from CSV:', error);
                 showToast(`❌ Error importing projects from CSV: ${error.message}`);
                 hasError = true;
-            } else {
-                projects = [...new Set([...projects, ...Array.from(projectsToUpsert)])]; // Update local projects array
             }
         }
 
