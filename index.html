@@ -4,1015 +4,117 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Time Diary Pro - Plan vs Reality Tracker</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
       const SUPABASE_URL = 'https://dfinivpcjzrvqhmxwqyv.supabase.co';
       const SUPABASE_ANON_KEY = 'sb_publishable_cAc5XykobeYO7EhZFwOKAw_FDtE6B21';
       const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     </script>
-    <style>
-        /* CSS from original file, cleaned for special characters */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #111827; color: #f3f4f6; padding: 16px; min-height: 100vh; }
-        .container { max-width: 1400px; margin: 0 auto; }
-        .header { background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-        .header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
-        .date-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        button { padding: 8px 14px; background: #374151; color: white; border: 1px solid #4b5563; border-radius: 6px; cursor: pointer; font-size: 13px; transition: background 0.2s; display: flex; align-items: center; gap: 6px; }
-        button:hover { background: #4b5563; }
-        button.primary { background: #2563eb; border-color: #3b82f6; }
-        button.primary:hover { background: #1d4ed8; }
-        button.success { background: #059669; border-color: #10b981; }
-        button.success:hover { background: #047857; }
-        button.warning { background: #d97706; border-color: #f59e0b; }
-        button.warning:hover { background: #b45309; }
-        button.cyan { background: #0891b2; border-color: #06b6d4; }
-        button.cyan:hover { background: #0e7490; }
-        button.purple { background: #7c3aed; border-color: #8b5cf6; }
-        button.purple:hover { background: #6d28d9; }
-        button.pink { background: #db2777; border-color: #ec4899; }
-        button.pink:hover { background: #be185d; }
-        button.green { background: #059669; border-color: #10b981; }
-        button.green:hover { background: #047857; }
-        input[type="date"], input[type="text"], textarea, select { padding: 8px 12px; background: #374151; border: 1px solid #4b5563; border-radius: 6px; color: white; font-size: 13px; }
-        input[type="text"]:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6; }
-        input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
-        textarea { resize: none; width: 100%; }
-        .panel { background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 20px; margin-bottom: 16px; display: none; }
-        .panel.active { display: block; }
-        .panel-title { font-size: 18px; font-weight: bold; margin-bottom: 16px; }
-        .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
-        .summary-box { background: #374151; border: 2px solid; border-radius: 8px; padding: 16px; text-align: center; }
-        .summary-box.blue { border-color: #3b82f6; }
-        .summary-box.green { border-color: #10b981; }
-        .summary-box.orange { border-color: #f59e0b; }
-        .summary-box.purple { border-color: #8b5cf6; }
-        .summary-value { font-size: 24px; font-weight: bold; margin-bottom: 4px; }
-        .summary-value.blue { color: #60a5fa; }
-        .summary-value.green { color: #34d399; }
-        .summary-value.orange { color: #fbbf24; }
-        .summary-value.purple { color: #a78bfa; }
-        .summary-value.yellow { color: #fbbf24; }
-        .summary-label { font-size: 11px; color: #9ca3af; text-transform: uppercase; }
-        .project-list { display: flex; flex-direction: column; gap: 8px; }
-        .project-item { background: #374151; border: 1px solid #4b5563; border-radius: 6px; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
-        .project-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
-        .template-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        .template-card { background: #374151; border: 1px solid #4b5563; border-radius: 6px; padding: 12px; }
-        .template-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px; }
-        .template-name { font-weight: bold; font-size: 14px; }
-        .template-date { font-size: 11px; color: #9ca3af; }
-        .template-actions { display: flex; gap: 6px; }
-        .bulk-panel { background: #1f2937; border: 2px solid #f59e0b; border-radius: 8px; padding: 16px; margin-bottom: 16px; display: none; }
-        .bulk-panel.active { display: block; }
-        .bulk-controls { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-        .time-grid { background: #1f2937; border: 1px solid #374151; border-radius: 8px; overflow: hidden; }
-        .time-grid-header { display: grid; grid-template-columns: 50px 70px 1fr 1fr 180px; background: #111827; border-bottom: 2px solid #374151; }
-        .header-cell { padding: 10px 8px; text-align: center; font-weight: bold; font-size: 11px; text-transform: uppercase; border-right: 1px solid #374151; }
-        .header-cell:last-child { border-right: none; }
-        .header-cell.blue { color: #60a5fa; }
-        .header-cell.green { color: #34d399; }
-        .header-cell.purple { color: #a78bfa; }
-        .time-grid-body { max-height: 600px; overflow-y: auto; }
-        .time-row { display: grid; grid-template-columns: 50px 70px 1fr 1fr 180px; border-bottom: 1px solid #374151; }
-        .time-row:hover { background: #1f2937; }
-        .time-row.selected { background: rgba(251, 191, 36, 0.1); }
-        .cell { padding: 8px; border-right: 1px solid #374151; display: flex; align-items: center; justify-content: center; }
-        .cell.time { font-family: monospace; font-weight: bold; font-size: 11px; background: #1a1f2e; }
-        .cell.input { padding: 6px; }
-        .cell.input input, .cell.input textarea { width: 100%; margin: 0; font-size: 12px; padding: 6px; }
-        .cell.input textarea { height: 50px; }
-        .cell.project { padding: 6px; flex-direction: column; gap: 4px; }
-        .project-input-row { display: flex; gap: 4px; width: 100%; align-items: center; }
-        .project-input-row input { flex: 1; font-size: 11px; padding: 4px 6px; }
-        .project-input-row select { width: 50px; font-size: 11px; padding: 4px; }
-        .distraction-input { width: 100%; background: rgba(239, 68, 68, 0.1) !important; border-color: #ef4444 !important; color: #fca5a5 !important; font-size: 10px !important; padding: 4px 6px !important; }
-        .weekly-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 16px; }
-        .day-box { background: #374151; border: 1px solid #4b5563; border-radius: 6px; padding: 8px; text-align: center; }
-        .day-name { font-size: 11px; color: #9ca3af; margin-bottom: 4px; }
-        .day-stat { font-size: 11px; }
-        .color-blue { background-color: #3b82f6; }
-        .color-green { background-color: #10b981; }
-        .color-purple { background-color: #8b5cf6; }
-        .color-orange { background-color: #f59e0b; }
-        .color-pink { background-color: #ec4899; }
-        .color-indigo { background-color: #6366f1; }
-        .color-teal { background-color: #14b8a6; }
-        .color-amber { background-color: #f59e0b; }
-        .color-red { background-color: #ef4444; }
-        .color-cyan { background-color: #06b6d4; }
-        .toast { position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 14px 18px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: none; z-index: 1000; animation: slideIn 0.3s ease-out; }
-        .toast.show { display: block; }
-        @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @media (max-width: 1024px) {
-            .time-grid-header, .time-row { grid-template-columns: 40px 60px 1fr 140px; }
-            .cell.input:nth-child(4) { display: none; }
-            .header-cell:nth-child(4) { display: none; }
-            .summary-grid { grid-template-columns: repeat(2, 1fr); }
-            .template-grid { grid-template-columns: 1fr; }
-        }
-        @media (max-width: 640px) {
-            .header-row { flex-direction: column; align-items: stretch; }
-            .date-controls { justify-content: center; }
-        }
-    </style>
 </head>
-<body id="artifacts-component-root-html">
+<body>
     <div class="container">
         <div class="header">
             <div class="header-row">
                 <div class="date-controls">
-                    <button onclick="changeDate(-1)">&#9664;</button>
-                    <input type="date" id="dateInput" onchange="onDateChange()" value="2026-01-28">
-                    <button onclick="changeDate(1)">&#9654;</button>
-                    <button onclick="goToToday()">Today</button>
+                    <button id="prevDayBtn">&lt;</button>
+                    <input type="date" id="dateInput">
+                    <button id="nextDayBtn">&gt;</button>
+                    <button id="todayBtn">Today</button>
                 </div>
-                <div class="date-controls">
-                    <button class="cyan" onclick="copyYesterday()">&#128197; Yesterday</button>
-                    <button class="purple" onclick="toggleTemplates()">&#128462; Templates</button>
-                    <button class="warning" onclick="toggleSummary()">&#128200; Summary</button>
-                    <button class="pink" onclick="toggleReflection()">&#128172; Reflect</button>
-                    <button class="primary" onclick="saveData()">&#128427; Save</button>
+                <div class="main-actions">
+                    <button id="copyYesterdayBtn">📋 Yesterday</button>
+                    <button id="templatesBtn">📄 Templates</button>
+                    <button id="summaryBtn">📊 Summary</button>
+                    <button id="reflectBtn">💭 Reflect</button>
+                    <button id="saveBtn">💾 Save</button>
                 </div>
             </div>
-            <div class="date-controls">
-                <button class="success" onclick="exportJSON()">&#128190; Export JSON</button>
-                <button class="success" onclick="exportCSV()">&#128190; Export CSV</button>
-                <button class="green" onclick="document.getElementById('importFile').click()">&#128426; Import</button>
+            <div class="export-import-controls">
+                <button id="exportJsonBtn">📥 Export JSON</button>
+                <button id="exportCsvBtn">📥 Export CSV</button>
+                <input type="file" id="importFile" accept=".json,.csv" style="display: none;">
+                <button id="importBtn">📤 Import</button>
             </div>
         </div>
 
-        <div id="templatesPanel" class="panel">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <div class="panel-title">&#128462; Templates</div>
-                <button class="success" onclick="saveTemplate()">Save Current as Template</button>
+        <div id="templatesPanel" class="panel hidden">
+            <div class="panel-header">
+                <h2 class="panel-title">Templates</h2>
+                <button id="saveTemplateBtn">Save Current as Template</button>
             </div>
-            <div id="templateGrid" class="template-grid"><div style="grid-column: 1/-1; text-align: center; color: #9ca3af; padding: 20px;">No templates saved yet</div></div>
+            <div id="templateGrid" class="template-grid"></div>
         </div>
 
-        <div id="summaryPanel" class="panel">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <div class="panel-title">&#128200; Summary</div>
-                <div>
-                    <button onclick="setViewMode('daily')" id="btnDaily" class="primary">Daily</button>
-                    <button onclick="setViewMode('weekly')" id="btnWeekly" style="margin-left: 8px;">Weekly</button>
+        <div id="summaryPanel" class="panel hidden">
+            <div class="panel-header">
+                <h2 class="panel-title">Summary</h2>
+                <div class="view-mode-toggle">
+                    <button id="dailyViewBtn" class="active">Daily</button>
+                    <button id="weeklyViewBtn">Weekly</button>
                 </div>
             </div>
-            <div id="dailyView">
+            <div id="dailySummaryView">
                 <div class="summary-grid">
-                    <div class="summary-box blue">
-                        <div class="summary-value blue" id="totalPlanned">0h</div>
+                    <div class="summary-box">
+                        <div class="summary-value" id="totalPlanned">0h</div>
                         <div class="summary-label">Planned</div>
                     </div>
-                    <div class="summary-box green">
-                        <div class="summary-value green" id="totalActual">0h</div>
+                    <div class="summary-box">
+                        <div class="summary-value" id="totalActual">0h</div>
                         <div class="summary-label">Actual</div>
                     </div>
-                    <div class="summary-box orange">
-                        <div class="summary-value orange" id="totalDrift">+0h</div>
+                    <div class="summary-box">
+                        <div class="summary-value" id="totalDrift">+0h</div>
                         <div class="summary-label">Drift</div>
                     </div>
-                    <div class="summary-box purple">
-                        <div class="summary-value purple" id="efficiency">0%</div>
+                    <div class="summary-box">
+                        <div class="summary-value" id="efficiency">0%</div>
                         <div class="summary-label">Efficiency</div>
                     </div>
                 </div>
-                <div style="background: #374151; border: 1px solid #4b5563; border-radius: 6px; padding: 12px; text-align: center; margin-bottom: 16px;">
-                    <div style="font-size: 16px; font-weight: bold; color: #fbbf24;">⚡ Avg Energy: <span id="avgEnergy">3.0</span>/5</div>
+                <div class="avg-energy-box">
+                    ⚡ Avg Energy: <span id="avgEnergy">3.0</span>/5
                 </div>
                 <div id="projectList" class="project-list"></div>
             </div>
-            <div id="weeklyView" style="display: none;">
-                <h3 style="margin-bottom: 12px; font-size: 16px;">7-Day Overview</h3>
+            <div id="weeklySummaryView" class="hidden">
+                <h3>7-Day Overview</h3>
                 <div id="weeklyGrid" class="weekly-grid"></div>
-                <h4 style="margin: 16px 0 12px 0; font-size: 14px; font-weight: bold;">Project Breakdown (7 days)</h4>
+                <h4>Project Breakdown (7 days)</h4>
                 <div id="weeklyProjects" class="project-list"></div>
             </div>
         </div>
 
-        <div id="reflectionPanel" class="panel">
-            <div class="panel-title">💭 Daily Reflection</div>
+        <div id="reflectionPanel" class="panel hidden">
+            <h2 class="panel-title">Daily Reflection</h2>
             <textarea id="reflectionText" rows="4" placeholder="What did you learn today? What went well? What could be improved?"></textarea>
         </div>
 
-        <div id="bulkPanel" class="bulk-panel">
+        <div id="bulkPanel" class="panel hidden">
             <div class="bulk-controls">
-                <div style="font-weight: bold;">
-                    <span id="selectedCount">0</span> blocks selected
-                </div>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                    <input type="text" id="bulkProject" list="bulkProjectsList" placeholder="Project tag" style="width: 150px;">
-                    <button class="warning" onclick="applyBulkProject()">Apply to Selected</button>
-                    <button onclick="clearSelection()">Clear</button>
-                </div>
+                <div class="selected-count"><span id="selectedCount">0</span> blocks selected</div>
+                <input type="text" id="bulkProjectInput" list="projectsDatalist" placeholder="Project tag">
+                <button id="applyBulkProjectBtn">Apply to Selected</button>
+                <button id="clearSelectionBtn">Clear</button>
             </div>
         </div>
 
         <div class="time-grid">
             <div class="time-grid-header">
-                <div class="header-cell">&#10003;</div>
+                <div class="header-cell-checkbox"><input type="checkbox" id="selectAllCheckbox"></div>
                 <div class="header-cell">Time</div>
-                <div class="header-cell blue">Plan</div>
-                <div class="header-cell green">Reality</div>
-                <div class="header-cell purple">Project &amp; Energy</div>
+                <div class="header-cell">Plan</div>
+                <div class="header-cell">Reality</div>
+                <div class="header-cell">Project &amp; Energy</div>
             </div>
             <div class="time-grid-body" id="timeGridBody"></div>
         </div>
     </div>
 
-    <div id="toast" class="toast"></div>
-    <input type="file" id="importFile" accept=".json,.csv" style="display: none;" onchange="handleImport(event)">
-    <datalist id="bulkProjectsList"></datalist>
+    <div id="toast" class="toast hidden"></div>
+    <datalist id="projectsDatalist"></datalist>
 
-    <script>
-        let selectedDate = new Date().toISOString().split('T')[0];
-        let projects = [];
-        let timeBlocks = {};
-        let templates = [];
-        let dailyReflection = '';
-        let selectedBlocks = [];
-        let viewMode = 'daily';
-
-        const timeSlots = (() => {
-            const slots = [];
-            for (let h = 6; h < 24; h++) {
-                slots.push(`${h.toString().padStart(2, '0')}:00`);
-                if (h < 23) slots.push(`${h.toString().padStart(2, '0')}:30`);
-            }
-            return slots;
-        })();
-
-        const colors = ['color-blue', 'color-green', 'color-purple', 'color-orange', 'color-pink', 'color-indigo', 'color-teal', 'color-amber', 'color-red', 'color-cyan'];
-
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2500);
-        }
-
-        async function loadData() {
-            // Load projects from Supabase
-            const { data: fetchedProjects, error: projectsError } = await supabase.from('projects').select('name');
-            if (projectsError) {
-                console.error('Error fetching projects:', projectsError);
-            } else if (fetchedProjects) {
-                projects = fetchedProjects.map(p => p.name);
-            }
-
-            // Load templates from Supabase
-            const { data: fetchedTemplates, error: templatesError } = await supabase.from('templates').select('*');
-            if (templatesError) {
-                console.error('Error fetching templates:', templatesError);
-            } else if (fetchedTemplates) {
-                templates = fetchedTemplates.map(t => ({ name: t.name, data: t.data, created: t.created_at }));
-            }
-
-            // Load reflection for the selected date from Supabase
-            const { data: fetchedReflection, error: reflectionError } = await supabase
-                .from('reflections')
-                .select('content')
-                .eq('date', selectedDate)
-                .single();
-            if (reflectionError && reflectionError.code !== 'PGRST116') { // PGRST116 is 'No rows found'
-                console.error('Error fetching reflection:', reflectionError);
-            } else if (fetchedReflection) {
-                dailyReflection = fetchedReflection.content;
-                document.getElementById('reflectionText').value = dailyReflection;
-            } else {
-                dailyReflection = '';
-                document.getElementById('reflectionText').value = '';
-            }
-
-            // Load time blocks for the selected date from Supabase
-            const { data: fetchedTimeBlocks, error: timeBlocksError } = await supabase
-                .from('time_entries')
-                .select('time_slot, planned, actual, project_tag, energy_level, distraction_reason')
-                .eq('date', selectedDate);
-
-            if (timeBlocksError) {
-                console.error('Error fetching time blocks:', timeBlocksError);
-            } else if (fetchedTimeBlocks && fetchedTimeBlocks.length > 0) {
-                timeBlocks = {};
-                fetchedTimeBlocks.forEach(entry => {
-                    timeBlocks[entry.time_slot] = {
-                        p: entry.planned || '',
-                        a: entry.actual || '',
-                        pr: entry.project_tag || '',
-                        e: entry.energy_level || 3,
-                        d: entry.distraction_reason || ''
-                    };
-                });
-            } else {
-                timeBlocks = {};
-                timeSlots.forEach(s => {
-                    timeBlocks[s] = { p: '', a: '', pr: '', e: 3, d: '' };
-                });
-            }
-            renderGrid();
-            updateSummary();
-            renderTemplates();
-            updateBulkProjectList();
-        }
-
-        async function saveData() {
-            dailyReflection = document.getElementById('reflectionText').value;
-
-            // Save reflection to Supabase
-            const { error: reflectionUpsertError } = await supabase
-                .from('reflections')
-                .upsert({ date: selectedDate, content: dailyReflection }, { onConflict: 'date' });
-            if (reflectionUpsertError) console.error('Error saving reflection:', reflectionUpsertError);
-
-            // Save time blocks to Supabase
-            const timeEntriesToUpsert = Object.entries(timeBlocks).map(([time_slot, data]) => ({
-                date: selectedDate,
-                time_slot,
-                planned: data.p,
-                actual: data.a,
-                project_tag: data.pr,
-                energy_level: data.e,
-                distraction_reason: data.d
-            }));
-            const { error: timeBlocksUpsertError } = await supabase.from('time_entries').upsert(timeEntriesToUpsert, { onConflict: 'date,time_slot' });
-            if (timeBlocksUpsertError) console.error('Error saving time blocks:', timeBlocksUpsertError);
-
-            // Save projects to Supabase (only unique new ones)
-            const existingProjects = (await supabase.from('projects').select('name')).data.map(p => p.name);
-            const newProjects = projects.filter(p => !existingProjects.includes(p));
-            if (newProjects.length > 0) {
-                const projectsToUpsert = newProjects.map(name => ({ name }));
-                const { error: projectsUpsertError } = await supabase.from('projects').upsert(projectsToUpsert, { onConflict: 'name' });
-                if (projectsUpsertError) console.error('Error saving projects:', projectsUpsertError);
-            }
-
-            // Templates require more complex saving logic (update/insert) if we want to change their data. For now, assume saved through UI. The current template saving (saveTemplate()) still uses localStorage. This needs to be updated.
-            // const { error: templatesUpsertError } = await supabase.from('templates').upsert(templates.map(t => ({name: t.name, data: t.data, created_at: t.created})), { onConflict: 'name' });
-            // if (templatesUpsertError) console.error('Error saving templates:', templatesUpsertError);
-
-            showToast('✓ Data saved successfully!');
-        }
-
-        function renderGrid() {
-            const body = document.getElementById('timeGridBody');
-            body.innerHTML = '';
-            timeSlots.forEach(time => {
-                const block = timeBlocks[time] || { p: '', a: '', pr: '', e: 3, d: '' };
-                const isSelected = selectedBlocks.includes(time);
-                const row = document.createElement('div');
-                row.className = 'time-row' + (isSelected ? ' selected' : '');
-                row.innerHTML = `
-                    <div class="cell">
-                        <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleBlockSelection('${time}')">
-                    </div>
-                    <div class="cell time">${time}</div>
-                    <div class="cell input">
-                        <textarea onchange="updateBlock('${time}', 'p', this.value)" placeholder="Plan...">${block.p || ''}</textarea>
-                    </div>
-                    <div class="cell input">
-                        <textarea onchange="updateBlock('${time}', 'a', this.value)" placeholder="Reality...">${block.a || ''}</textarea>
-                    </div>
-                    <div class="cell project">
-                        <div class="project-input-row">
-                            <div class="project-dot ${getProjectColor(block.pr)}"></div>
-                            <input type="text" list="projectsList" value="${block.pr || ''}" onchange="updateProject('${time}', this.value)" placeholder="Tag">
-                            <select onchange="updateBlock('${time}', 'e', this.value)" title="Energy">
-                                <option value="1" ${block.e == 1 ? 'selected' : ''}>&#9889;1</option>
-                                <option value="2" ${block.e == 2 ? 'selected' : ''}>&#9889;2</option>
-                                <option value="3" ${block.e == 3 ? 'selected' : ''}>&#9889;3</option>
-                                <option value="4" ${block.e == 4 ? 'selected' : ''}>&#9889;4</option>
-                                <option value="5" ${block.e == 5 ? 'selected' : ''}>&#9889;5</option>
-                            </select>
-                        </div>
-                        ${block.a && !block.p ? `
-                        <input type="text" class="distraction-input" value="${block.d || ''}" onchange="updateBlock('${time}', 'd', this.value)" placeholder="Why deviated?">
-                        ` : ''}
-                    </div>
-                `;
-                body.appendChild(row);
-            });
-            const datalist = document.createElement('datalist');
-            datalist.id = 'projectsList';
-            projects.forEach(p => {
-                const option = document.createElement('option');
-                option.value = p;
-                datalist.appendChild(option);
-            });
-            body.appendChild(datalist);
-        }
-
-        function updateBlock(time, field, value) {
-            if (!timeBlocks[time]) timeBlocks[time] = { p: '', a: '', pr: '', e: 3, d: '' };
-            timeBlocks[time][field] = field === 'e' ? parseInt(value) : value;
-            updateSummary();
-            if (field === 'a' || field === 'p') {
-                renderGrid(); // Re-render to show/hide distraction input
-            }
-        }
-
-        function updateProject(time, value) {
-            updateBlock(time, 'pr', value);
-            if (value && !projects.includes(value)) {
-                projects.push(value);
-                renderGrid();
-                updateBulkProjectList();
-            }
-        }
-
-        function getProjectColor(proj) {
-            if (!proj) return '';
-            return colors[projects.indexOf(proj) % colors.length];
-        }
-
-        function toggleBlockSelection(time) {
-            if (selectedBlocks.includes(time)) {
-                selectedBlocks = selectedBlocks.filter(t => t !== time);
-            } else {
-                selectedBlocks.push(time);
-            }
-            document.getElementById('selectedCount').textContent = selectedBlocks.length;
-            document.getElementById('bulkPanel').classList.toggle('active', selectedBlocks.length > 0);
-            renderGrid();
-        }
-
-        function clearSelection() {
-            selectedBlocks = [];
-            document.getElementById('bulkPanel').classList.remove('active');
-            renderGrid();
-        }
-
-        function applyBulkProject() {
-            const proj = document.getElementById('bulkProject').value;
-            if (proj && selectedBlocks.length > 0) {
-                selectedBlocks.forEach(time => {
-                    updateBlock(time, 'pr', proj);
-                });
-                if (!projects.includes(proj)) {
-                    projects.push(proj);
-                }
-                clearSelection();
-                renderGrid();
-                updateSummary();
-                showToast(`✓ Applied "${proj}" to ${selectedBlocks.length} blocks`);
-            }
-        }
-
-        function updateBulkProjectList() {
-            const list = document.getElementById('bulkProjectsList');
-            list.innerHTML = '';
-            projects.forEach(p => {
-                const option = document.createElement('option');
-                option.value = p;
-                list.appendChild(option);
-            });
-        }
-
-        function updateSummary() {
-            const sum = {};
-            let tp = 0, ta = 0, planned = 0, completed = 0, es = 0, ec = 0;
-            Object.entries(timeBlocks).forEach(([_, d]) => {
-                if (d.p) planned++;
-                if (d.a) completed++;
-                if (d.e) { es += d.e; ec++; }
-                if (d.pr) {
-                    if (!sum[d.pr]) sum[d.pr] = { p: 0, a: 0 };
-                    if (d.p) { sum[d.pr].p += 0.5; tp += 0.5; }
-                    if (d.a) { sum[d.pr].a += 0.5; ta += 0.5; }
-                }
-            });
-            const drift = ta - tp;
-            const eff = planned > 0 ? Math.round((completed / planned) * 100) : 0;
-            const avgE = ec > 0 ? (es / ec).toFixed(1) : 0;
-
-            document.getElementById('totalPlanned').textContent = tp + 'h';
-            document.getElementById('totalActual').textContent = ta + 'h';
-            document.getElementById('totalDrift').textContent = (drift >= 0 ? '+' : '') + drift + 'h';
-            document.getElementById('totalDrift').className = 'summary-value ' + (drift >= 0 ? 'orange' : 'purple');
-            document.getElementById('efficiency').textContent = eff + '%';
-            document.getElementById('avgEnergy').textContent = avgE;
-
-            const list = document.getElementById('projectList');
-            list.innerHTML = '';
-            Object.entries(sum).forEach(([pr, t]) => {
-                const item = document.createElement('div');
-                item.className = 'project-item';
-                item.innerHTML = `
-                    <div>
-                        <span class="project-dot ${getProjectColor(pr)}"></span> <strong>${pr}</strong>
-                    </div>
-                    <div style="font-family: monospace; font-size: 13px;">
-                        <span style="color: #60a5fa">Plan: ${t.p}h</span> | <span style="color: #34d399">Real: ${t.a}h</span> | <span style="color: ${t.a >= t.p ? '#fbbf24' : '#a78bfa'}"> ${t.a >= t.p ? '+' : ''}${(t.a - t.p).toFixed(1)}h </span>
-                    </div>
-                `;
-                list.appendChild(item);
-            });
-        }
-
-        function toggleSummary() {
-            const panel = document.getElementById('summaryPanel');
-            panel.classList.toggle('active');
-        }
-
-        function toggleReflection() {
-            const panel = document.getElementById('reflectionPanel');
-            panel.classList.toggle('active');
-        }
-
-        function toggleTemplates() {
-            const panel = document.getElementById('templatesPanel');
-            panel.classList.toggle('active');
-        }
-
-        function setViewMode(mode) {
-            viewMode = mode;
-            document.getElementById('btnDaily').className = mode === 'daily' ? 'primary' : '';
-            document.getElementById('btnWeekly').className = mode === 'weekly' ? 'primary' : '';
-            document.getElementById('dailyView').style.display = mode === 'daily' ? 'block' : 'none';
-            document.getElementById('weeklyView').style.display = mode === 'weekly' ? 'block' : 'none';
-            if (mode === 'weekly') loadWeeklySummary();
-        }
-
-        async function loadWeeklySummary() {
-            const weekData = {};
-            const projectTotals = {};
-            const today = new Date(selectedDate); // Use selectedDate for consistency
-            for (let i = 0; i < 7; i++) {
-                const d = new Date(today);
-                d.setDate(today.getDate() - i);
-                const dk = d.toISOString().split('T')[0];
-
-                const { data: blocks, error } = await supabase
-                    .from('time_entries')
-                    .select('planned, actual, project_tag')
-                    .eq('date', dk);
-
-                if (error) {
-                    console.error(`Error fetching data for ${dk}:`, error);
-                    continue;
-                }
-
-                if (blocks && blocks.length > 0) {
-                    let dp = 0, da = 0;
-                    blocks.forEach(b => {
-                        if (b.project_tag) {
-                            if (!projectTotals[b.project_tag]) projectTotals[b.project_tag] = { p: 0, a: 0 };
-                            if (b.planned) {
-                                projectTotals[b.project_tag].p += 0.5;
-                                dp += 0.5;
-                            }
-                            if (b.actual) {
-                                projectTotals[b.project_tag].a += 0.5;
-                                da += 0.5;
-                            }
-                        }
-                    });
-                    weekData[dk] = { p: dp, a: da };
-                } else {
-                    weekData[dk] = { p: 0, a: 0 };
-                }
-            }
-
-            const grid = document.getElementById('weeklyGrid');
-            grid.innerHTML = '';
-            Object.entries(weekData).reverse().forEach(([date, data]) => {
-                const day = document.createElement('div');
-                day.className = 'day-box';
-                const d = new Date(date);
-                day.innerHTML = `
-                    <div class="day-name">${d.toLocaleDateString('en-US', { weekday: 'short' })}</div>
-                    <div class="day-stat" style="color: #60a5fa">P: ${data.p}h</div>
-                    <div class="day-stat" style="color: #34d399">A: ${data.a}h</div>
-                `;
-                grid.appendChild(day);
-            });
-
-            const list = document.getElementById('weeklyProjects');
-            list.innerHTML = '';
-            Object.entries(projectTotals).forEach(([pr, t]) => {
-                const item = document.createElement('div');
-                item.className = 'project-item';
-                item.innerHTML = `
-                    <div>
-                        <span class="project-dot ${getProjectColor(pr)}"></span> <strong>${pr}</strong>
-                    </div>
-                    <div style="font-family: monospace; font-size: 13px;">
-                        <span style="color: #60a5fa">Plan: ${t.p}h</span> | <span style="color: #34d399">Real: ${t.a}h</span> | <span style="color: ${t.a >= t.p ? '#fbbf24' : '#a78bfa'}"> ${t.a >= t.p ? '+' : ''}${(t.a - t.p).toFixed(1)}h </span>
-                    </div>
-                `;
-                list.appendChild(item);
-            });
-        }
-
-        async function saveTemplate() {
-            const name = prompt('Enter template name:');
-            if (name) {
-                const { error } = await supabase.from('templates').upsert({ name, data: JSON.parse(JSON.stringify(timeBlocks)), created_at: new Date().toISOString() }, { onConflict: 'name' });
-                if (error) {
-                    console.error('Error saving template:', error);
-                    showToast('❌ Template save failed!');
-                } else {
-                    // Re-fetch templates to update the UI correctly
-                    const { data: fetchedTemplates, error: fetchError } = await supabase.from('templates').select('*');
-                    if (fetchError) console.error('Error re-fetching templates:', fetchError);
-                    else templates = fetchedTemplates.map(t => ({ name: t.name, data: t.data, created: t.created_at }));
-
-                    renderTemplates();
-                    showToast('✓ Template saved!');
-                }
-            }
-        }
-
-        function renderTemplates() {
-            const grid = document.getElementById('templateGrid');
-            grid.innerHTML = '';
-            if (templates.length === 0) {
-                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #9ca3af; padding: 20px;">No templates saved yet</div>';
-                return;
-            }
-            templates.forEach((t, i) => {
-                const card = document.createElement('div');
-                card.className = 'template-card';
-                card.innerHTML = `
-                    <div class="template-header">
-                        <div>
-                            <div class="template-name">${t.name}</div>
-                            <div class="template-date">${new Date(t.created).toLocaleDateString()}</div>
-                        </div>
-                        <div class="template-actions">
-                            <button class="primary" onclick="loadTemplate(${i})" style="padding: 4px 8px; font-size: 11px;">Load</button>
-                            <button class="warning" onclick="deleteTemplate(${i})" style="padding: 4px 8px; font-size: 11px;">Delete</button>
-                        </div>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        function loadTemplate(index) {
-            timeBlocks = JSON.parse(JSON.stringify(templates[index].data));
-            renderGrid();
-            updateSummary();
-            showToast('✓ Template loaded!');
-        }
-
-        async function deleteTemplate(index) {
-            if (confirm('Delete this template?')) {
-                const templateToDelete = templates[index];
-                const { error } = await supabase.from('templates').delete().eq('name', templateToDelete.name);
-
-                if (error) {
-                    console.error('Error deleting template:', error);
-                    showToast('❌ Template deletion failed!');
-                } else {
-                    templates.splice(index, 1);
-                    renderTemplates();
-                    showToast('✓ Template deleted!');
-                }
-            }
-        }
-
-        function changeDate(days) {
-            const d = new Date(selectedDate);
-            d.setDate(d.getDate() + days);
-            selectedDate = d.toISOString().split('T')[0];
-            document.getElementById('dateInput').value = selectedDate;
-            loadData();
-        }
-
-        function onDateChange() {
-            selectedDate = document.getElementById('dateInput').value;
-            loadData();
-        }
-
-        function goToToday() {
-            selectedDate = new Date().toISOString().split('T')[0];
-            document.getElementById('dateInput').value = selectedDate;
-            loadData();
-        }
-
-        async function copyYesterday() {
-            const y = new Date(selectedDate);
-            y.setDate(y.getDate() - 1);
-            const yesterdayDate = y.toISOString().split('T')[0];
-
-            const { data: yesterdayBlocks, error } = await supabase
-                .from('time_entries')
-                .select('time_slot, actual, project_tag')
-                .eq('date', yesterdayDate);
-
-            if (error) {
-                console.error('Error fetching yesterday\'s data:', error);
-                showToast('❌ Error fetching yesterday\'s data');
-                return;
-            }
-
-            if (yesterdayBlocks && yesterdayBlocks.length > 0) {
-                timeBlocks = {}; // Clear current day's timeBlocks
-                timeSlots.forEach(s => {
-                    timeBlocks[s] = { p: '', a: '', pr: '', e: 3, d: '' }; // Initialize with empty
-                });
-
-                yesterdayBlocks.forEach(entry => {
-                    if (timeBlocks[entry.time_slot]) {
-                        timeBlocks[entry.time_slot].p = entry.actual || ''; // Planned for today = Actual from yesterday
-                        timeBlocks[entry.time_slot].pr = entry.project_tag || '';
-                    }
-                });
-                renderGrid();
-                updateSummary();
-                showToast('✓ Yesterday\'s actuals copied to today\'s plan!');
-            } else {
-                showToast('❌ No data for yesterday');
-            }
-        }
-
-        async function exportJSON() {
-            const allData = { projects: [], templates: [], entries: {} };
-
-            // Fetch all projects
-            const { data: fetchedProjects, error: projectsError } = await supabase.from('projects').select('name');
-            if (projectsError) console.error('Error fetching projects for export:', projectsError);
-            else allData.projects = fetchedProjects.map(p => p.name);
-
-            // Fetch all templates
-            const { data: fetchedTemplates, error: templatesError } = await supabase.from('templates').select('*');
-            if (templatesError) console.error('Error fetching templates for export:', templatesError);
-            else allData.templates = fetchedTemplates.map(t => ({ name: t.name, data: t.data, created: t.created_at }));
-
-            // Fetch all time entries and reflections for the last 90 days
-            const today = new Date();
-            const dateRange = [];
-            for (let i = 0; i < 90; i++) {
-                const d = new Date(today);
-                d.setDate(today.getDate() - i);
-                dateRange.push(d.toISOString().split('T')[0]);
-            }
-
-            const { data: allTimeBlocks, error: allTimeBlocksError } = await supabase
-                .from('time_entries')
-                .select('date, time_slot, planned, actual, project_tag, energy_level, distraction_reason')
-                .in('date', dateRange);
-            
-            const { data: allReflections, error: allReflectionsError } = await supabase
-                .from('reflections')
-                .select('date, content')
-                .in('date', dateRange);
-
-            if (allTimeBlocksError) console.error('Error fetching all time blocks for export:', allTimeBlocksError);
-            if (allReflectionsError) console.error('Error fetching all reflections for export:', allReflectionsError);
-
-            if (allTimeBlocks) {
-                allTimeBlocks.forEach(entry => {
-                    if (!allData.entries[entry.date]) {
-                        allData.entries[entry.date] = { blocks: {}, reflection: '' };
-                    }
-                    allData.entries[entry.date].blocks[entry.time_slot] = {
-                        p: entry.planned || '',
-                        a: entry.actual || '',
-                        pr: entry.project_tag || '',
-                        e: entry.energy_level || 3,
-                        d: entry.distraction_reason || ''
-                    };
-                });
-            }
-            if (allReflections) {
-                allReflections.forEach(entry => {
-                    if (!allData.entries[entry.date]) {
-                        allData.entries[entry.date] = { blocks: {}, reflection: '' };
-                    }
-                    allData.entries[entry.date].reflection = entry.content || '';
-                });
-            }
-
-            const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `time-diary-pro-${selectedDate}.json`;
-            a.click();
-            showToast('✓ JSON exported (90 days)!');
-        }
-
-        async function exportCSV() {
-            let csv = 'Date,Time,Planned,Actual,Project,Energy,Distraction\\n';
-
-            const today = new Date();
-            const dateRange = [];
-            for (let i = 0; i < 30; i++) {
-                const d = new Date(today);
-                d.setDate(today.getDate() - i);
-                dateRange.push(d.toISOString().split('T')[0]);
-            }
-
-            const { data: allTimeBlocks, error: allTimeBlocksError } = await supabase
-                .from('time_entries')
-                .select('date, time_slot, planned, actual, project_tag, energy_level, distraction_reason')
-                .in('date', dateRange);
-
-            if (allTimeBlocksError) {
-                console.error('Error fetching all time blocks for CSV export:', allTimeBlocksError);
-                showToast('❌ CSV export failed due to data fetching error');
-                return;
-            }
-
-            if (allTimeBlocks) {
-                // Group blocks by date and then by time_slot
-                const groupedBlocks = {};
-                allTimeBlocks.forEach(entry => {
-                    if (!groupedBlocks[entry.date]) {
-                        groupedBlocks[entry.date] = {};
-                    }
-                    groupedBlocks[entry.date][entry.time_slot] = entry;
-                });
-
-                // Sort dates in ascending order for CSV output
-                const sortedDates = Object.keys(groupedBlocks).sort();
-
-                sortedDates.forEach(date => {
-                    timeSlots.forEach(time => {
-                        const b = groupedBlocks[date][time];
-                        if (b && (b.planned || b.actual)) {
-                            csv += `${date},${time},"${b.planned || ''}","${b.actual || ''}","${b.project_tag || ''}",${b.energy_level || 3},"${b.distraction_reason || ''}"\\n`;
-                        }
-                    });
-                });
-            }
-
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `time-diary-pro-${selectedDate}.csv`;
-            a.click();
-            showToast('✓ CSV exported (30 days)!');
-        }
-
-        async function handleImport(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = async function(e) { // Make onload async to await Supabase calls
-                try {
-                    const content = e.target.result;
-                    const ext = file.name.split('.').pop().toLowerCase();
-                    if (ext === 'json') {
-                        await importJSON(content); // Await the async importJSON
-                    } else if (ext === 'csv') {
-                        await importCSV(content); // Await the async importCSV
-                    } else {
-                        showToast('❌ Unsupported file');
-                    }
-                } catch (error) {
-                    console.error(error);
-                    showToast('❌ Import failed');
-                }
-            };
-            reader.readAsText(file);
-            event.target.value = '';
-        }
-
-        async function importJSON(content) {
-            try {
-                const data = JSON.parse(content);
-                let count = 0;
-
-                // Import projects
-                if (data.projects && data.projects.length > 0) {
-                    const projectsToUpsert = data.projects.map(name => ({ name }));
-                    const { error } = await supabase.from('projects').upsert(projectsToUpsert, { onConflict: 'name' });
-                    if (error) console.error('Error importing projects:', error);
-                    else projects = [...new Set([...projects, ...data.projects])]; // Update local projects array
-                }
-
-                // Import templates
-                if (data.templates && data.templates.length > 0) {
-                    const templatesToUpsert = data.templates.map(t => ({
-                        name: t.name,
-                        data: t.data,
-                        created_at: t.created // Assuming 'created' from export is 'created_at' for Supabase
-                    }));
-                    const { error } = await supabase.from('templates').upsert(templatesToUpsert, { onConflict: 'name' });
-                    if (error) console.error('Error importing templates:', error);
-                    else { // Re-fetch templates to ensure UI consistency
-                        const { data: fetchedTemplates, error: fetchError } = await supabase.from('templates').select('*');
-                        if (fetchError) console.error('Error re-fetching templates after import:', fetchError);
-                        else templates = fetchedTemplates.map(t => ({ name: t.name, data: t.data, created: t.created_at }));
-                    }
-                }
-
-                // Import entries (time blocks and reflections)
-                if (data.entries) {
-                    for (const [date, entry] of Object.entries(data.entries)) {
-                        // Upsert reflection
-                        if (entry.reflection) {
-                            const { error: reflectionError } = await supabase
-                                .from('reflections')
-                                .upsert({ date, content: entry.reflection }, { onConflict: 'date' });
-                            if (reflectionError) console.error(`Error importing reflection for ${date}:`, reflectionError);
-                        }
-
-                        // Upsert time blocks
-                        if (entry.blocks && Object.keys(entry.blocks).length > 0) {
-                            const timeEntriesToUpsert = Object.entries(entry.blocks).map(([time_slot, block]) => ({
-                                date,
-                                time_slot,
-                                planned: block.p,
-                                actual: block.a,
-                                project_tag: block.pr,
-                                energy_level: block.e,
-                                distraction_reason: block.d
-                            }));
-                            const { error: timeBlocksError } = await supabase.from('time_entries').upsert(timeEntriesToUpsert, { onConflict: 'date,time_slot' });
-                            if (timeBlocksError) console.error(`Error importing time blocks for ${date}:`, timeBlocksError);
-                        }
-                        count++;
-                    }
-                }
-
-                showToast(`✓ Imported ${count} days!`);
-                loadData(); // Reload data to ensure UI reflects newly imported data
-            } catch (error) {
-                console.error(error);
-                showToast('❌ JSON parse error');
-            }
-        }
-
-        async function importCSV(content) {
-            try {
-                const lines = content.split('\\n'); // Changed to split by newline for CSV
-                let count = 0;
-                const timeEntriesToUpsert = [];
-                const projectsToUpsert = new Set();
-                const reflectionsToUpsert = {}; // CSV doesn't typically have reflections per day, but handling if it did
-
-                for (let i = 1; i < lines.length; i++) { // Skip header row
-                    const line = lines[i].trim();
-                    if (!line) continue;
-
-                    // Regex to handle commas within double quotes
-                    const matches = line.match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g);
-                    if (!matches || matches.length < 7) { // Expect 7 fields
-                        console.warn(`Skipping malformed CSV line: ${line}`);
-                        continue;
-                    }
-
-                    const date = matches[0].replace(/"/g, '').trim();
-                    const time_slot = matches[1].replace(/"/g, '').trim();
-                    const planned = matches[2].replace(/"/g, '').trim();
-                    const actual = matches[3].replace(/"/g, '').trim();
-                    const project_tag = matches[4].replace(/"/g, '').trim();
-                    const energy_level = matches[5] ? parseInt(matches[5].replace(/"/g, '').trim()) : 3;
-                    const distraction_reason = matches[6] ? matches[6].replace(/"/g, '').trim() : '';
-
-                    timeEntriesToUpsert.push({
-                        date,
-                        time_slot,
-                        planned,
-                        actual,
-                        project_tag,
-                        energy_level,
-                        distraction_reason
-                    });
-
-                    if (project_tag) projectsToUpsert.add(project_tag);
-                    // No reflection data in typical CSV, so reflectionsToUpsert won't be used here naturally
-                    count++;
-                }
-
-                // Upsert time entries
-                if (timeEntriesToUpsert.length > 0) {
-                    const { error } = await supabase.from('time_entries').upsert(timeEntriesToUpsert, { onConflict: 'date,time_slot' });
-                    if (error) console.error('Error importing time entries from CSV:', error);
-                }
-
-                // Upsert new projects
-                if (projectsToUpsert.size > 0) {
-                    const newProjectsArray = Array.from(projectsToUpsert).map(name => ({ name }));
-                    const { error } = await supabase.from('projects').upsert(newProjectsArray, { onConflict: 'name' });
-                    if (error) console.error('Error importing projects from CSV:', error);
-                    else projects = [...new Set([...projects, ...Array.from(projectsToUpsert)])]; // Update local projects array
-                }
-
-                showToast(`✓ Imported ${count} time entries from CSV!`);
-                loadData(); // Reload data to ensure UI reflects newly imported data
-            } catch (error) {
-                console.error(error);
-                showToast('❌ CSV parse error');
-            }
-        }
-
-        // Auto-save every 30 seconds
-        setInterval(() => {
-            if (Object.keys(timeBlocks).length > 0) {
-                saveData();
-            }
-        }, 30000);
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('dateInput').value = selectedDate;
-            loadData();
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
