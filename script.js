@@ -358,7 +358,7 @@ async function copyYesterday() {
 
         yesterdayBlocks.forEach(entry => {
             if (timeBlocks[entry.time_slot]) {
-                timeBlocks[entry.time_slot].p = entry.actual || ''; // Planned for today = Actual from yesterday
+                timeBlocks[entry.time_slot].p = entry.planned || ''; // Planned for today = Planned from yesterday
                 timeBlocks[entry.time_slot].pr = entry.project_tag || '';
             }
         });
