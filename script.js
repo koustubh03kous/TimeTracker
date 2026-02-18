@@ -341,7 +341,7 @@ async function copyYesterday() {
 
     const { data: yesterdayBlocks, error } = await supabase
         .from('time_entries')
-        .select('time_slot, actual, project_tag')
+        .select('time_slot, planned, actual, project_tag')
         .eq('date', yesterdayDate);
 
     if (error) {
