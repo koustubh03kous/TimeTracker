@@ -488,8 +488,8 @@ textarea {
     .time-grid-header, .time-row {
         grid-template-columns: 40px 60px 1fr 140px;
     }
-    .cell.input:nth-child(4) { display: none; }
-    .header-cell:nth-child(4) { display: none; }
+    /* Removed: .cell.input:nth-child(4) { display: none; } */
+    /* Removed: .header-cell:nth-child(4) { display: none; } */
     .summary-grid { grid-template-columns: repeat(2, 1fr); }
     .template-grid { grid-template-columns: 1fr; }
 }
